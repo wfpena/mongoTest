@@ -8,9 +8,17 @@ var morgan = require('morgan');
 var mongoose = require("mongoose");
 mongoose.Promise = global.Promise;
 
+//body-parser funciona como middleware entre o server e o browser
+var bodyParser = require('body-parser');
+
+var passport = require('passport');
+var flash = require('connect-flash');
+
 
 var configDB = require('./config/database.js');
 mongoose.connect(configDB.url);
+require('./config/passport')(passport);
+
 /*while(mongoose.connection.readyState ==2){
 	console.log(mongoose.connection.readyState);
 }
@@ -18,10 +26,16 @@ mongoose.connect(configDB.url);
 
 app.use(morgan('dev'));//use morgan as middelware(gohere before the actual app), to log
 app.use(cookieParser());
-app.use(session({secret: 'anystringtext',
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(session({secret: 'anystringoftext',
 				saveUninitializad: true,
 				resave: true}));
 
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(flash());
+
+app.set('view engine', 'ejs');
 
 
 /*app.use('/', function(req, res){
@@ -31,7 +45,14 @@ app.use(session({secret: 'anystringtext',
 	console.log(req.session);
 });*/
 
-require('./app/routes.js')(app);
+
+
+require('./app/routes.js')(app, passport);
+//isso é o mesmo que:
+//var func = require('./app/routes.js');
+//func(app);
+//adicionou o passport também, depois
+
 
 app.listen(port);
 console.log('server running on port: ' + port);
